@@ -69,7 +69,7 @@ def main():
     ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
     DIRNAME = os.path.join(os.environ.get("SCRATCH", ROOT_DIR), "deepchem-data")
     hparams_dir = "filters_{}_blocklayers_{}_imgspec_{}".format(args.base_filters, layers_per_block, args.img_spec)
-    restore_dir = os.path.join(DIRNAME, "chemception", hparams_dir, "best-models", args.restore_exp + "/")
+    restore_dir = os.path.join(DIRNAME, "chembl25", "chemception", hparams_dir, "best-models", args.restore_exp + "/")
     logger.info("Restore dir: {}".format(restore_dir))
 
     load_fn = loaders[args.dataset]
