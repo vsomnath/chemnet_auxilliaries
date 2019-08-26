@@ -18,13 +18,74 @@ from deepchem.models.tensorgraph.optimizers import RMSProp, ExponentialDecay
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-loaders = {"tox21": dc.molnet.load_tox21, "hiv": dc.molnet.load_hiv, "sampl": dc.molnet.load_sampl}
+loaders = {
+      'bace_c': dc.molnet.load_bace_classification,
+      'bace_r': dc.molnet.load_bace_regression,
+      'bbbp': dc.molnet.load_bbbp,
+      'clearance': dc.molnet.load_clearance,
+      'clintox': dc.molnet.load_clintox,
+      'delaney': dc.molnet.load_delaney,
+      'hiv': dc.molnet.load_hiv,
+      'hopv': dc.molnet.load_hopv,
+      'kaggle': dc.molnet.load_kaggle,
+      'kinase': dc.molnet.load_kinase,
+      'lipo': dc.molnet.load_lipo,
+      'muv': dc.molnet.load_muv,
+      'nci': dc.molnet.load_nci,
+      'pcba': dc.molnet.load_pcba,
+      'pcba_146': dc.molnet.load_pcba_146,
+      'pcba_2475': dc.molnet.load_pcba_2475,
+      'ppb': dc.molnet.load_ppb,
+      'qm7': dc.molnet.load_qm7_from_mat,
+      'qm7b': dc.molnet.load_qm7b_from_mat,
+      'qm8': dc.molnet.load_qm8,
+      'qm9': dc.molnet.load_qm9,
+      'sampl': dc.molnet.load_sampl,
+      'sider': dc.molnet.load_sider,
+      'thermosol': dc.molnet.load_thermosol,
+      'tox21': dc.molnet.load_tox21,
+      'toxcast': dc.molnet.load_toxcast
+  }
+
+classification_datasets = ['bace_c', 'bbbp', 'clintox', 'hiv', 'muv', 'pcba', 'pcba_146', 'pcba_2475', 'sider', 'tox21', 'toxcast']
+regression_datasets = ['bace_r', 'clearance', 'delaney', 'hopv', 'kaggle', 'lipo', 'nci', 'ppb', 'qm7', 'qm7b', 'qm8', 'qm9', 'sampl', 'thermosol']
+
+metric_types = {'bace_c': dc.metrics.roc_auc_score,
+      'bace_r': dc.metrics.rms_score,
+      'bbbp': dc.metrics.roc_auc_score,
+      'clearance': dc.metrics.rms_score,
+      'clintox': dc.metrics.roc_auc_score,
+      'delaney': dc.metrics.mae_score,
+      'hiv': dc.metrics.roc_auc_score,
+      'hopv': dc.metrics.mae_score,
+      'kaggle': dc.metrics.mae_score,
+      'lipo': dc.metrics.mae_score,
+      'muv': dc.metrics.roc_auc_score,
+      'nci': dc.metrics.mae_score,
+      'pcba': dc.metrics.prc_auc_score,
+      'pcba_146': dc.metrics.prc_auc_score,
+      'pcba_2475': dc.metrics.prc_auc_score,
+      'ppb': dc.metrics.mae_score,
+      'qm7': dc.metrics.mae_score,
+      'qm7b': dc.metrics.mae_score,
+      'qm8': dc.metrics.mae_score,
+      'qm9': dc.metrics.mae_score,
+      'sampl': dc.metrics.rms_score,
+      'sider': dc.metrics.roc_auc_score,
+      'thermosol': dc.metrics.rms_score,
+      'tox21': dc.metrics.roc_auc_score,
+      'toxcast': dc.metrics.roc_auc_score}
+
 
 def get_task_mode(dataset):
-    if dataset in ["tox21", "hiv"]:
+    if dataset in classification_datasets:
         return "classification"
-    elif dataset in ["sampl"]:
+
+    elif dataset in regression_datasets:
         return "regression"
+
+    else:
+        raise ValueError("Dataset {} does not have a mode defined.".format(dataset))
 
 def compute_loss_on_valid(valid, model, tasks, mode, verbose=True):
     loss_fn = model._loss_fn
@@ -69,10 +130,7 @@ def main():
     load_fn = loaders[args.dataset]
     tasks, dataset, transformers = load_fn(featurizer="smiles2img", data_dir=DIRNAME, save_dir=DIRNAME, img_spec=args.img_spec, split="stratified")
 
-    if mode == "classification":
-        metric_type = dc.metrics.roc_auc_score
-    else:
-        metric_type = dc.metrics.rms_score
+    metric_type = metric_types[args.dataset]
 
     task_averager = np.mean
     if len(tasks) == 1:
@@ -111,7 +169,6 @@ def main():
     model.save_checkpoint(model_dir=best_models_dir_1)
 
     loss_old = compute_loss_on_valid(valid, model, tasks, mode=mode)
-    logger.info("Computed loss on validation set {}".format(loss_old))
 
     train_scores = model.evaluate(train, [metric], [])
     valid_scores = model.evaluate(valid, [metric], [])
